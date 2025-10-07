@@ -17,7 +17,7 @@ if (toggle && nav) {
 }
 
 /* ===== Блок 2+3: Загрузка и обработка ===== */
-// DOM-элементы (ОБЪЯВЛЯЕМ ОДИН РАЗ!)
+// DOM-элементы (объявляем один раз)
 const dropZone   = document.getElementById('dropZone');
 const fileInput  = document.getElementById('fileInput');
 const fileInfo   = document.getElementById('fileInfo');
@@ -32,7 +32,7 @@ const presetEl   = document.getElementById('preset');
 let currentFile = null;
 let lastOutputBlob = null;
 
-/* ---------- Приём файла: надёжные проверки ---------- */
+// ---------- Приём файла: надёжные проверки ----------
 const EXT_OK = ['.mp3','.wav','.m4a','.aac','.ogg','.opus','.flac','.wma','.aiff','.aif','.caf'];
 const isAudioByExt = (name='') => EXT_OK.some(ext => (name||'').toLowerCase().endsWith(ext));
 const isAudioFile  = (f) => (f?.type && f.type.startsWith('audio/')) || isAudioByExt(f?.name);
@@ -53,7 +53,7 @@ function handleAudioFile(file){
   showFileSelected(file);
 }
 
-/* ---------- Drag & Drop + input ---------- */
+// ---------- Drag & Drop + input ----------
 if (dropZone && fileInput){
   const activate = () => dropZone.classList.add('dragover');
   const deactivate = () => dropZone.classList.remove('dragover');
@@ -87,7 +87,6 @@ function ffmpegAvailable() {
 
 function loadScriptOnce(src, timeoutMs = 20000) {
   return new Promise((resolve, reject) => {
-    // уже подключён?
     const exists = [...document.scripts].some(s => s.src === src);
     if (exists && ffmpegAvailable()) return resolve();
 
@@ -95,12 +94,11 @@ function loadScriptOnce(src, timeoutMs = 20000) {
     s.src = src;
     s.crossOrigin = 'anonymous';
     s.referrerPolicy = 'no-referrer';
-    s.async = false; // важно: нам нужен глобал FFmpeg до выполнения кода ниже
+    s.async = false; // нужно, чтобы глобал FFmpeg появился до нашего кода
     s.onload = () => resolve();
     s.onerror = () => reject(new Error('Не удалось загрузить: ' + src));
     document.head.appendChild(s);
 
-    // таймаут
     setTimeout(() => reject(new Error('Таймаут загрузки: ' + src)), timeoutMs);
   });
 }
@@ -111,7 +109,7 @@ async function ensureFFmpegScript() {
   const cdns = [
     'https://unpkg.com/@ffmpeg/ffmpeg@0.12.6/dist/ffmpeg.min.js',
     'https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.6/dist/ffmpeg.min.js',
-    'https://cdnjs.cloudflare.com/ajax/libs/ffmpeg/0.12.6/ffmpeg.min.js' // на всякий, может не быть
+    'https://cdnjs.cloudflare.com/ajax/libs/ffmpeg/0.12.6/ffmpeg.min.js'
   ];
 
   let lastErr;
@@ -126,23 +124,36 @@ async function ensureFFmpegScript() {
   throw lastErr || new Error('FFmpeg не загрузился ни с одного CDN');
 }
 
+// сохраняем фабрики здесь, чтобы были доступны в любой функции
+let createFFmpegFn = null;
+let fetchFileFn    = null;
+
 let ffmpeg = null;
 let engineReady = false;
+let engineLoading = false;
 
 async function ensureEngine(){
   if (engineReady) return;
+  if (engineLoading) {
+    // если кликнули 2 раза — просто ждём завершения первой инициализации
+    while (!engineReady) { await new Promise(r => setTimeout(r, 200)); }
+    return;
+  }
+  engineLoading = true;
 
   // 1) гарантируем, что скрипт подгружен
   await ensureFFmpegScript();
   if (!ffmpegAvailable()) {
+    engineLoading = false;
     throw new Error('FFmpeg не загружен (нет window.FFmpeg).');
   }
 
-  // 2) берём фабрики из глобала
-  const { createFFmpeg, fetchFile } = window.FFmpeg;
+  // 2) берём фабрики из глобала и сохраняем
+  createFFmpegFn = window.FFmpeg.createFFmpeg;
+  fetchFileFn    = window.FFmpeg.fetchFile;
 
   statusEl && (statusEl.textContent = 'Инициализация аудиодвижка… (10–20 сек)');
-  ffmpeg = createFFmpeg({
+  ffmpeg = createFFmpegFn({
     log: false,
     corePath: 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/ffmpeg-core.js'
   });
@@ -153,9 +164,9 @@ async function ensureEngine(){
 
   await ffmpeg.load();
   engineReady = true;
+  engineLoading = false;
   statusEl && (statusEl.textContent = 'Движок готов.');
 }
-
 
 function buildFilter(preset){
   switch(preset){
@@ -179,9 +190,11 @@ async function processAudio(){
 
     const ext = (currentFile.name.split('.').pop() || 'wav').toLowerCase();
     const inName  = 'input.' + ext;
-    const outName = 'output.wav'; // WAV — надёжно
+    const outName = 'output.wav'; // WAV — надёжно и совместимо
 
-    await ffmpeg.FS('writeFile', inName, await fetchFile(currentFile));
+    // используем сохранённую фабрику fetchFileFn
+    await ffmpeg.FS('writeFile', inName, await fetchFileFn(currentFile));
+
     const af = buildFilter(presetEl ? presetEl.value : 'voice');
 
     if (statusEl) statusEl.textContent = 'Обработка…';
@@ -214,8 +227,8 @@ if (downloadBtn) downloadBtn.addEventListener('click', () => {
   const url = URL.createObjectURL(lastOutputBlob);
   const a = document.createElement('a');
   a.href = url;
+  // фикс: правильный regex для отрезания расширения — НУЖНА обратная косая черта перед точкой
   a.download = 'NoiseGone_' + (currentFile?.name?.replace(/\.[^.]+$/, '') || 'output') + '.wav';
   a.click();
   URL.revokeObjectURL(url);
 });
-
