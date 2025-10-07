@@ -78,32 +78,84 @@ if (dropZone && fileInput){
   });
 }
 
-/* ---------- ffmpeg.wasm подключение ---------- */
-const hasFFmpeg = typeof window !== 'undefined'
-  && window.FFmpeg
-  && typeof window.FFmpeg.createFFmpeg === 'function';
+/* ---------- ffmpeg.wasm: автозагрузка с запасными CDN ---------- */
+function ffmpegAvailable() {
+  return typeof window !== 'undefined'
+    && window.FFmpeg
+    && typeof window.FFmpeg.createFFmpeg === 'function';
+}
 
-const createFFmpeg = hasFFmpeg ? window.FFmpeg.createFFmpeg : null;
-const fetchFile    = hasFFmpeg ? window.FFmpeg.fetchFile    : null;
+function loadScriptOnce(src, timeoutMs = 20000) {
+  return new Promise((resolve, reject) => {
+    // уже подключён?
+    const exists = [...document.scripts].some(s => s.src === src);
+    if (exists && ffmpegAvailable()) return resolve();
+
+    const s = document.createElement('script');
+    s.src = src;
+    s.crossOrigin = 'anonymous';
+    s.referrerPolicy = 'no-referrer';
+    s.async = false; // важно: нам нужен глобал FFmpeg до выполнения кода ниже
+    s.onload = () => resolve();
+    s.onerror = () => reject(new Error('Не удалось загрузить: ' + src));
+    document.head.appendChild(s);
+
+    // таймаут
+    setTimeout(() => reject(new Error('Таймаут загрузки: ' + src)), timeoutMs);
+  });
+}
+
+async function ensureFFmpegScript() {
+  if (ffmpegAvailable()) return;
+
+  const cdns = [
+    'https://unpkg.com/@ffmpeg/ffmpeg@0.12.6/dist/ffmpeg.min.js',
+    'https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.6/dist/ffmpeg.min.js',
+    'https://cdnjs.cloudflare.com/ajax/libs/ffmpeg/0.12.6/ffmpeg.min.js' // на всякий, может не быть
+  ];
+
+  let lastErr;
+  for (const url of cdns) {
+    try {
+      await loadScriptOnce(url, 20000);
+      if (ffmpegAvailable()) return;
+    } catch (e) {
+      lastErr = e;
+    }
+  }
+  throw lastErr || new Error('FFmpeg не загрузился ни с одного CDN');
+}
 
 let ffmpeg = null;
 let engineReady = false;
 
 async function ensureEngine(){
   if (engineReady) return;
-  if (!hasFFmpeg) {
-    throw new Error('FFmpeg не загружен. Проверь, что в <head> подключено: https://unpkg.com/@ffmpeg/ffmpeg@0.12.6/dist/ffmpeg.min.js (выше script.js).');
-  }
-  if (statusEl) statusEl.textContent = 'Инициализация аудиодвижка… (10–20 сек при первом запуске)';
 
-  ffmpeg = createFFmpeg({ log:false, corePath:'https://unpkg.com/@ffmpeg/core@0.12.6/dist/ffmpeg-core.js' });
-  ffmpeg.setProgress(({ ratio }) => {
-    if (progressEl) progressEl.style.width = Math.min(100, Math.round((ratio||0)*100)) + '%';
+  // 1) гарантируем, что скрипт подгружен
+  await ensureFFmpegScript();
+  if (!ffmpegAvailable()) {
+    throw new Error('FFmpeg не загружен (нет window.FFmpeg).');
+  }
+
+  // 2) берём фабрики из глобала
+  const { createFFmpeg, fetchFile } = window.FFmpeg;
+
+  statusEl && (statusEl.textContent = 'Инициализация аудиодвижка… (10–20 сек)');
+  ffmpeg = createFFmpeg({
+    log: false,
+    corePath: 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/ffmpeg-core.js'
   });
+
+  ffmpeg.setProgress(({ ratio }) => {
+    if (progressEl) progressEl.style.width = Math.min(100, Math.round((ratio || 0) * 100)) + '%';
+  });
+
   await ffmpeg.load();
   engineReady = true;
-  if (statusEl) statusEl.textContent = 'Движок готов.';
+  statusEl && (statusEl.textContent = 'Движок готов.');
 }
+
 
 function buildFilter(preset){
   switch(preset){
