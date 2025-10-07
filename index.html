@@ -33,31 +33,38 @@
   <link rel="stylesheet" href="styles.css" />
 
   <!-- Structured Data (Organization + WebSite) -->
-  <script type="application/ld+json">
-  {
-    "@context":"https://schema.org",
-    "@type":"Organization",
-    "name":"NoiseGone",
-    "url":"https://noisegone.example.com",
-    "logo":"https://placehold.co/512x512?text=NG"
+  <!-- Structured Data (Organization) -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "name": "NoiseGone",
+  "url": "https://noisegone.example.com",
+  "logo": "https://placehold.co/512x512?text=NG"
+}
+</script>
+
+<!-- Structured Data (WebSite + SearchAction) -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": "NoiseGone",
+  "url": "https://noisegone.example.com",
+  "potentialAction": {
+    "@type": "SearchAction",
+    "target": "https://noisegone.example.com/?q={search_term_string}",
+    "query-input": "required name=search_term_string"
   }
-  </script>
-  <script type="application/ld+json">
-  {
-    "@context":"https://schema.org",
-    "@type":"WebSite",
-    "name":"NoiseGone",
-    "url":"https://noisegone.example.com",
-    "potentialAction":{
-      "@type":"SearchAction",
-      "target":"https://noisegone.example.com/?q={search_term_string}",
-      "query-input":"required name=search_term_string"
-    }
-  }
-    <!-- ffmpeg.wasm -->
+}
+</script>
+
+<!-- ffmpeg.wasm (должен идти ВЫШЕ твоего script.js) -->
 <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.12.6/dist/ffmpeg.min.js"></script>
 
-  </script>
+<!-- твой код -->
+<script src="script.js" defer></script>
+
 </head>
 <body>
   <header class="site-header">
