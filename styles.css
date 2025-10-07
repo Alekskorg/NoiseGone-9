@@ -1,0 +1,87 @@
+:root{
+  --bg:#0b0e14;
+  --bg-alt:#0f1320;
+  --text:#eaeaea;
+  --muted:#a6adbb;
+  --brand:#7c3aed; /* фиолетовый как в твоём OG-изображении */
+  --card:#121826;
+  --border:#1e2230;
+}
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;
+  font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+}
+
+.container{width:min(1100px, 92%); margin-inline:auto}
+
+.site-header{
+  position:sticky; top:0; z-index:50;
+  background:rgba(11,14,20,.75); backdrop-filter: blur(8px);
+  border-bottom:1px solid var(--border);
+}
+.header-inner{display:flex; align-items:center; justify-content:space-between; padding:12px 0}
+.brand{display:flex; align-items:center; gap:10px; text-decoration:none; color:var(--text)}
+.brand-mark{display:inline-block; letter-spacing:-4px; color:var(--brand); font-weight:700}
+.brand-name{font-weight:700}
+
+.site-nav{display:flex; gap:18px; align-items:center}
+.site-nav a{color:var(--text); text-decoration:none; opacity:.9}
+.site-nav a:hover{opacity:1}
+.site-nav .cta{
+  padding:8px 14px; border:1px solid var(--border); border-radius:10px;
+}
+
+.nav-toggle{display:none; background:none; border:0}
+.nav-burger, .nav-burger::before, .nav-burger::after{
+  content:""; display:block; width:22px; height:2px; background:var(--text); position:relative
+}
+.nav-burger::before{position:absolute; top:-6px}
+.nav-burger::after{position:absolute; top:6px}
+
+.section{padding:56px 0}
+.section.alt{background:var(--bg-alt)}
+.hero{padding:72px 0}
+.hero-inner{ text-align:center }
+.lead{color:var(--muted); max-width:720px; margin:12px auto 0}
+.cta-row{margin:22px 0 8px; display:flex; gap:12px; justify-content:center; flex-wrap:wrap}
+.hint{color:var(--muted); font-size:.9rem}
+
+.btn{display:inline-block; padding:12px 18px; border-radius:12px; text-decoration:none; border:1px solid var(--border)}
+.btn-primary{background:var(--brand); border-color:transparent; color:#fff}
+.btn-ghost{background:transparent; color:var(--text)}
+
+.grid.three{display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-top:18px}
+.card{background:var(--card); border:1px solid var(--border); border-radius:14px; padding:18px}
+.card h3{margin:6px 0 8px}
+
+.steps{display:grid; gap:8px; counter-reset:step}
+.steps li{background:var(--card); border:1px solid var(--border); border-radius:12px; padding:12px 14px; list-style:none; position:relative}
+.steps li::before{
+  counter-increment:step; content:counter(step);
+  position:absolute; left:12px; top:-12px; background:var(--brand); color:#fff;
+  border-radius:10px; padding:2px 8px; font-size:.8rem
+}
+
+.site-footer{border-top:1px solid var(--border); margin-top:28px}
+.footer-inner{display:flex; align-items:center; justify-content:space-between; padding:16px 0; gap:10px}
+.footer-nav{display:flex; gap:16px}
+.footer-nav a{color:var(--muted); text-decoration:none}
+.footer-nav a:hover{color:var(--text)}
+
+.prose{max-width:800px}
+.doc .section{padding-top:32px}
+
+@media (max-width: 800px){
+  .grid.three{grid-template-columns:1fr}
+  .site-nav{position:fixed; right:16px; top:58px; background:var(--card);
+    border:1px solid var(--border); border-radius:12px; padding:10px; flex-direction:column; gap:10px; display:none}
+  .site-nav[data-collapsed="false"]{display:flex}
+  .nav-toggle{display:inline-grid; place-items:center; width:40px; height:40px}
+}
