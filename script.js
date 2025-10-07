@@ -1,8 +1,8 @@
 /* ============================================================
-   NoiseGone — script.js (Block 1–3, UMD FFmpeg, duplicate-safe)
+   NoiseGone — script.js (локальный UMD FFmpeg, Block 1–3)
    ============================================================ */
 
-// Защита от повторного подключения файла
+// защита от повторной инициализации
 if (window.__NG_BOOTED__) {
   console.warn('NoiseGone: script.js уже инициализирован. Второй запуск пропущен.');
 } else {
@@ -88,86 +88,55 @@ if (window.__NG_BOOTED__) {
     });
   }
 
-  /* ---------- ffmpeg.wasm: автозагрузка UMD с fallback ---------- */
+  /* ---------- ЛОКАЛЬНЫЙ ffmpeg.wasm (UMD) ---------- */
+  // Если проект на домене в корне — оставь '/ffmpeg/umd/'.
+  // Если сайт развёрнут из подпапки — поставь './ffmpeg/umd/'.
+  const FF_BASE = '/ffmpeg/umd/';
+
   function ffmpegAvailable() {
     return typeof window !== 'undefined'
       && window.FFmpeg
       && typeof window.FFmpeg.createFFmpeg === 'function';
   }
 
-  function loadScriptOnce(src, timeoutMs = 20000) {
+  function loadLocalFFmpeg() {
     return new Promise((resolve, reject) => {
-      // уже подключён по этому URL?
-      const exists = [...document.scripts].some(s => s.src === src);
-      if (exists && ffmpegAvailable()) return resolve();
+      if (ffmpegAvailable()) return resolve();
 
       const s = document.createElement('script');
-      s.src = src;
+      s.src = FF_BASE + 'ffmpeg.min.js'; // локальный UMD
       s.crossOrigin = 'anonymous';
-      s.referrerPolicy = 'no-referrer';
-      s.async = false; // нужен глобал FFmpeg до нашего кода
+      s.async = false;
       s.onload = () => resolve();
-      s.onerror = () => reject(new Error('Не удалось загрузить: ' + src));
+      s.onerror = () => reject(new Error('Не удалось загрузить локальный ' + s.src));
       document.head.appendChild(s);
-
-      setTimeout(() => reject(new Error('Таймаут загрузки: ' + src)), timeoutMs);
     });
   }
 
-  async function ensureFFmpegScript() {
-    if (ffmpegAvailable()) return;
-
-    // ВАЖНО: используем UMD пути!
-    const cdns = [
-      'https://unpkg.com/@ffmpeg/ffmpeg@0.12.6/dist/umd/ffmpeg.min.js',
-      'https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.6/dist/umd/ffmpeg.min.js'
-    ];
-
-    let lastErr;
-    for (const url of cdns) {
-      try {
-        await loadScriptOnce(url, 20000);
-        if (ffmpegAvailable()) return;
-      } catch (e) {
-        lastErr = e;
-      }
-    }
-    throw lastErr || new Error('FFmpeg не загрузился ни с одного CDN');
-  }
-
-  // фабрики/ссылки
   let createFFmpegFn = null;
   let fetchFileFn    = null;
-
   let ffmpeg = null;
   let engineReady = false;
   let engineLoading = false;
 
   async function ensureEngine(){
     if (engineReady) return;
-    if (engineLoading) {
-      // если кликнули 2 раза — просто ждём
-      while (!engineReady) { await new Promise(r => setTimeout(r, 150)); }
-      return;
-    }
+    if (engineLoading) { while (!engineReady) { await new Promise(r => setTimeout(r, 150)); } return; }
     engineLoading = true;
 
-    // 1) гарантируем загрузку UMD FFmpeg
-    await ensureFFmpegScript();
+    await loadLocalFFmpeg();
     if (!ffmpegAvailable()) {
       engineLoading = false;
-      throw new Error('FFmpeg не загружен (нет window.FFmpeg).');
+      throw new Error('FFmpeg не загружен (локальные файлы не найдены). Проверьте ' + FF_BASE);
     }
 
-    // 2) берём фабрики из глобала и сохраняем
     createFFmpegFn = window.FFmpeg.createFFmpeg;
     fetchFileFn    = window.FFmpeg.fetchFile;
 
     if (statusEl) statusEl.textContent = 'Инициализация аудиодвижка… (10–20 сек)';
     ffmpeg = createFFmpegFn({
       log: false,
-      // ВАЖНО: UMD corePath
-      corePath: 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.js'
+      corePath: FF_BASE + 'ffmpeg-core.js'
     });
 
     ffmpeg.setProgress(({ ratio }) => {
@@ -202,9 +171,8 @@ if (window.__NG_BOOTED__) {
 
       const ext = (currentFile.name.split('.').pop() || 'wav').toLowerCase();
       const inName  = 'input.' + ext;
-      const outName = 'output.wav'; // WAV — надёжно и совместимо
+      const outName = 'output.wav';
 
-      // используем сохранённую фабрику fetchFileFn
       await ffmpeg.FS('writeFile', inName, await fetchFileFn(currentFile));
 
       const af = buildFilter(presetEl ? presetEl.value : 'voice');
@@ -239,10 +207,8 @@ if (window.__NG_BOOTED__) {
     const url = URL.createObjectURL(lastOutputBlob);
     const a = document.createElement('a');
     a.href = url;
-    // правильный regex: вырезаем расширение
     a.download = 'NoiseGone_' + (currentFile?.name?.replace(/\.[^.]+$/, '') || 'output') + '.wav';
     a.click();
     URL.revokeObjectURL(url);
   });
-
-} // <-- конец защиты от повторной инициализации
+}
