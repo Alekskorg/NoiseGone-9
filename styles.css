@@ -116,3 +116,9 @@ body{
 .brand svg {
   display: block;
 }
+.controls{display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin:10px 0}
+.select-wrap{display:flex; align-items:center; gap:8px; background:var(--card); border:1px solid var(--border); padding:8px 10px; border-radius:10px}
+.select-wrap select{background:transparent; color:var(--text); border:0; outline:0}
+.btn.hidden{display:none}
+.status{margin-top:6px}
+.muted{color:var(--muted); font-size:.9rem}
