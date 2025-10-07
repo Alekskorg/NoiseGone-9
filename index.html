@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="x-ua-compatible" content="ie=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <title>NoiseGone — Удаляйте шум из аудио за секунды</title>
+  <meta name="description" content="NoiseGone — шум ушёл. Быстрое шумоподавление прямо в браузере. Загрузите аудио и получите чистый звук за несколько секунд. Бесплатно до 5 минут в день.">
+  <meta name="theme-color" content="#0b0e14" />
+
+  <!-- Open Graph / Twitter -->
+  <meta property="og:title" content="NoiseGone — Удаляйте шум из аудио за секунды" />
+  <meta property="og:description" content="NoiseGone — шум ушёл. Быстрое шумоподавление прямо в браузере." />
+  <meta property="og:image" content="https://placehold.co/1200x630/7c3aed/ffffff?text=NoiseGone" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://noisegone.example.com" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <!-- Canonical -->
+  <link rel="canonical" href="https://noisegone.example.com/">
+
+  <!-- Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <!-- Favicon (можешь заменить на свой) -->
+  <link rel="icon" href="favicon.ico">
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="styles.css" />
+
+  <!-- Structured Data (Organization + WebSite) -->
+  <script type="application/ld+json">
+  {
+    "@context":"https://schema.org",
+    "@type":"Organization",
+    "name":"NoiseGone",
+    "url":"https://noisegone.example.com",
+    "logo":"https://placehold.co/512x512?text=NG"
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context":"https://schema.org",
+    "@type":"WebSite",
+    "name":"NoiseGone",
+    "url":"https://noisegone.example.com",
+    "potentialAction":{
+      "@type":"SearchAction",
+      "target":"https://noisegone.example.com/?q={search_term_string}",
+      "query-input":"required name=search_term_string"
+    }
+  }
+  </script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand" href="/">
+        <span class="brand-mark" aria-hidden="true">▮▮▮</span>
+        <span class="brand-name">NoiseGone</span>
+      </a>
+
+      <button class="nav-toggle" aria-expanded="false" aria-controls="nav" aria-label="Открыть меню">
+        <span class="nav-burger"></span>
+      </button>
+
+      <nav id="nav" class="site-nav" data-collapsed="true">
+        <a href="#features">Возможности</a>
+        <a href="#how">Как это работает</a>
+        <a href="#faq">FAQ</a>
+        <a class="cta" href="#try">Попробовать</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <!-- Hero -->
+    <section class="section hero" id="try">
+      <div class="container hero-inner">
+        <h1>Шум ушёл — остаётся чистый звук</h1>
+        <p class="lead">
+          Быстрое шумоподавление прямо в браузере. Загрузите аудио и получите чистый результат за секунды.
+          <strong>Бесплатно до 5 минут в день.</strong>
+        </p>
+        <div class="cta-row">
+          <a class="btn btn-primary" href="#features">Что умеет</a>
+          <a class="btn btn-ghost" href="#how">Как работает</a>
+        </div>
+        <p class="hint">⚠️ На этом этапе это демо-каркас без реальной обработки — функционал появится на следующем блоке.</p>
+      </div>
+    </section>
+
+    <!-- Features -->
+    <section class="section" id="features">
+      <div class="container">
+        <h2>Возможности</h2>
+        <div class="grid three">
+          <div class="card">
+            <h3>В браузере</h3>
+            <p>Никаких установок. Работает на десктопе и телефоне.</p>
+          </div>
+          <div class="card">
+            <h3>Быстро</h3>
+            <p>Оптимизированный пайплайн: шумодав, нормализация, фильтры.</p>
+          </div>
+          <div class="card">
+            <h3>Просто</h3>
+            <p>Загрузил → получил результат. Никаких сложных настроек.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- How it works -->
+    <section class="section alt" id="how">
+      <div class="container">
+        <h2>Как это работает</h2>
+        <ol class="steps">
+          <li>Загрузите аудиофайл (MP3/WAV/…)</li>
+          <li>Мы удалим шум, нормализуем громкость и подчистим речь</li>
+          <li>Скачайте улучшенный файл</li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- FAQ -->
+    <section class="section" id="faq">
+      <div class="container">
+        <h2>FAQ</h2>
+        <details>
+          <summary>Это бесплатно?</summary>
+          <p>Да: до 5 минут аудио в день — бесплатно. Дальше появятся тарифы.</p>
+        </details>
+        <details>
+          <summary>Мои файлы безопасны?</summary>
+          <p>На этапе MVP файлы обрабатываются локально в браузере. Позже добавим серверную обработку с шифрованием.</p>
+        </details>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <p>© <span id="y"></span> NoiseGone</p>
+      <nav class="footer-nav">
+        <a href="/privacy.html">Политика конфиденциальности</a>
+        <a href="/terms.html">Условия использования</a>
+      </nav>
+    </div>
+  </footer>
+
+  <script src="script.js" defer></script>
+</body>
+</html>
