@@ -85,3 +85,30 @@ body{
   .site-nav[data-collapsed="false"]{display:flex}
   .nav-toggle{display:inline-grid; place-items:center; width:40px; height:40px}
 }
+.drop-zone{
+  border:2px dashed var(--brand);
+  border-radius:16px;
+  padding:40px 20px;
+  text-align:center;
+  cursor:pointer;
+  transition:background .3s, border-color .3s;
+  background:rgba(124,58,237,.05);
+}
+.drop-zone:hover{background:rgba(124,58,237,.1);}
+.drop-zone.dragover{background:rgba(124,58,237,.15); border-color:#fff;}
+
+.browse{color:var(--brand); text-decoration:underline; cursor:pointer;}
+
+.file-info{margin-top:20px; text-align:center;}
+.hidden{display:none;}
+
+.progress-bar{
+  width:100%; max-width:500px;
+  height:10px; background:var(--border);
+  border-radius:6px; margin:10px auto 16px;
+  overflow:hidden;
+}
+.progress{
+  width:0%; height:100%; background:var(--brand);
+  transition:width .3s;
+}
