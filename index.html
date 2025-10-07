@@ -107,19 +107,36 @@
 <section class="section alt" id="upload">
   <div class="container upload">
     <h2>Попробуйте прямо сейчас</h2>
+
     <div id="dropZone" class="drop-zone">
       <p id="dropText">Перетащите аудиофайл сюда или <span class="browse">выберите файл</span></p>
       <input type="file" id="fileInput" accept="audio/*" hidden>
     </div>
+
     <div id="fileInfo" class="file-info hidden">
       <p>📂 <span id="fileName"></span></p>
+
+      <div class="controls">
+        <label class="select-wrap">
+          <span>Пресет</span>
+          <select id="preset">
+            <option value="voice">Voice Clean (речь)</option>
+            <option value="podcast">Podcast Boost (речь + громкость)</option>
+            <option value="music">Music Light (мягкая чистка)</option>
+          </select>
+        </label>
+        <button id="processBtn" class="btn btn-primary">Обработать</button>
+        <button id="downloadBtn" class="btn hidden">Скачать результат</button>
+      </div>
+
       <div class="progress-bar">
         <div class="progress" id="progress"></div>
       </div>
-      <button id="downloadBtn" class="btn btn-primary hidden">Скачать результат</button>
+      <p id="status" class="status muted"></p>
     </div>
   </div>
 </section>
+
 
     <!-- Features -->
     <section class="section" id="features">
