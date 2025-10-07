@@ -79,3 +79,135 @@ function handleFile(file) {
     URL.revokeObjectURL(url);
   };
 }
+// === Block 3: Реальная обработка через ffmpeg.wasm ===
+const { createFFmpeg, fetchFile } = FFmpeg || {};
+let ffmpeg;          // экземпляр
+let engineReady = false;
+let lastOutputBlob = null;
+
+const presetEl = document.getElementById('preset');
+const processBtn = document.getElementById('processBtn');
+const statusEl = document.getElementById('status');
+
+let currentFile = null;
+
+// перехватываем файл из блока 2
+function handleFile(file){
+  if (!file.type.startsWith('audio/')) { alert('Только аудио (MP3/WAV и т.п.)'); return; }
+  if (file.size > 25 * 1024 * 1024) { alert('До 25 МБ на этапе MVP.'); return; }
+
+  currentFile = file;
+  fileNameEl.textContent = file.name;
+  fileInfo.classList.remove('hidden');
+  progressEl.style.width = '0%';
+  downloadBtn.classList.add('hidden');
+  statusEl.textContent = 'Файл готов к обработке.';
+}
+
+// инициализация движка (один раз)
+async function ensureEngine() {
+  if (engineReady) return;
+  statusEl.textContent = 'Инициализация аудиодвижка… (первый запуск может занять ~10–20 сек)';
+  ffmpeg = createFFmpeg({ log: false, corePath: 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/ffmpeg-core.js' });
+  ffmpeg.setProgress(({ ratio }) => {
+    // во время загрузки ядра ratio тоже идёт
+    progressEl.style.width = Math.min(100, Math.round(ratio * 100)) + '%';
+  });
+  await ffmpeg.load();
+  engineReady = true;
+  statusEl.textContent = 'Движок готов.';
+}
+
+// маппинг пресетов → фильтры ffmpeg
+function buildFilter(preset) {
+  // Используем доступные в ffmpeg.wasm фильтры: highpass, lowpass, compand, volume.
+  if (preset === 'voice') {
+    // чистка речи: низ срезаем, верх мягко, лёгкий компандер, +3 dB
+    return 'highpass=f=120,lowpass=f=8000,compand=attacks=0.02:releases=0.3:points=-80/-80|-40/-32|-20/-12|0/-3:soft-knee=6:gain=3';
+  }
+  if (preset === 'podcast') {
+    // чуть более агрессивно + громче
+    return 'highpass=f=100,lowpass=f=8500,compand=attacks=0.01:releases=0.25:points=-80/-80|-40/-30|-20/-10|0/-2:soft-knee=6:gain=5';
+  }
+  if (preset === 'music') {
+    // лёгкая чистка без сильной компрессии
+    return 'highpass=f=60,lowpass=f=16000,volume=2dB';
+  }
+  return 'volume=0dB';
+}
+
+async function processAudio() {
+  if (!currentFile) { alert('Сначала выберите файл.'); return; }
+  processBtn.disabled = true;
+  downloadBtn.classList.add('hidden');
+  statusEl.textContent = 'Подготовка…';
+
+  try {
+    await ensureEngine();
+
+    // Имя входа/выхода
+    const inName = 'input.' + (currentFile.name.split('.').pop() || 'wav');
+    const outName = 'output.wav'; // WAV даёт совместимость (mp3 не всегда доступен в wasm-сборке)
+
+    // Пишем файл во внутреннюю FS
+    await ffmpeg.FS('writeFile', inName, await fetchFile(currentFile));
+
+    // Фильтр
+    const af = buildFilter(presetEl.value);
+
+    // Попытка с компандером; если упадёт — fallback без него
+    statusEl.textContent = 'Обработка…';
+    ffmpeg.setProgress(({ ratio }) => {
+      const p = Math.min(100, Math.round(ratio * 100));
+      progressEl.style.width = p + '%';
+    });
+
+    try {
+      await ffmpeg.run(
+        '-i', inName,
+        '-af', af,
+        '-ar', '44100',  // частота
+        '-ac', '1',      // моно для речи
+        outName
+      );
+    } catch (e) {
+      // fallback — без compand (на случай отсутствия фильтра в сборке)
+      statusEl.textContent = 'Обработка (упрощённый режим)…';
+      await ffmpeg.run(
+        '-i', inName,
+        '-af', 'highpass=f=120,lowpass=f=8000,volume=3dB',
+        '-ar', '44100',
+        '-ac', '1',
+        outName
+      );
+    }
+
+    const data = ffmpeg.FS('readFile', outName);
+    lastOutputBlob = new Blob([data.buffer], { type: 'audio/wav' });
+
+    downloadBtn.classList.remove('hidden');
+    statusEl.textContent = 'Готово ✅';
+  } catch (err) {
+    console.error(err);
+    alert('Не удалось обработать аудио. Проверь формат файла.');
+    statusEl.textContent = 'Ошибка обработки.';
+  } finally {
+    processBtn.disabled = false;
+  }
+}
+
+// поведение кнопок
+if (processBtn) {
+  processBtn.addEventListener('click', processAudio);
+}
+if (downloadBtn) {
+  downloadBtn.addEventListener('click', () => {
+    if (!lastOutputBlob) return;
+    const url = URL.createObjectURL(lastOutputBlob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'NoiseGone_' + (currentFile?.name?.replace(/\.[^.]+$/, '') || 'output') + '.wav';
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+}
