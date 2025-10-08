@@ -25,7 +25,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
 
-  <!-- Favicon (можешь заменить на свой) -->
+  <!-- Favicon -->
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 
 
@@ -33,54 +33,51 @@
   <link rel="stylesheet" href="styles.css" />
 
   <!-- Structured Data (Organization + WebSite) -->
-  <!-- Structured Data (Organization) -->
-<script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "Organization",
-  "name": "NoiseGone",
-  "url": "https://noisegone.example.com",
-  "logo": "https://placehold.co/512x512?text=NG"
-}
-</script>
-
-<!-- Structured Data (WebSite + SearchAction) -->
-<script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "WebSite",
-  "name": "NoiseGone",
-  "url": "https://noisegone.example.com",
-  "potentialAction": {
-    "@type": "SearchAction",
-    "target": "https://noisegone.example.com/?q={search_term_string}",
-    "query-input": "required name=search_term_string"
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "NoiseGone",
+    "url": "https://noisegone.example.com",
+    "logo": "https://placehold.co/512x512?text=NG"
   }
-}
-</script>
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "NoiseGone",
+    "url": "https://noisegone.example.com",
+    "potentialAction": {
+      "@type": "SearchAction",
+      "target": "https://noisegone.example.com/?q={search_term_string}",
+      "query-input": "required name=search_term_string"
+    }
+  }
+  </script>
 
-<!-- твой код -->
-<script src="script.js" defer></script>
+  <!-- Основной скрипт приложения. Атрибут defer указывает браузеру загружать скрипт параллельно с HTML,
+       но выполнять его только после полной загрузки и разбора страницы. -->
+  <script src="script.js" defer></script>
 
 </head>
 <body>
   <header class="site-header">
     <div class="container header-inner">
-      
+      <a class="brand" href="/">
+        <span class="brand-mark" aria-hidden="true">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" role="img" aria-label="NoiseGone logo">
+            <rect width="24" height="24" rx="5" fill="#1b1f2a"/>
+            <path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 1 0-6 0v6a3 3 0 0 0 3 3z" fill="#b38aff"/>
+            <path d="M5 11v1a7 7 0 0 0 14 0v-1h-1v1a6 6 0 0 1-12 0v-1H5zM11 19v2h2v-2h-2z" fill="#b38aff"/>
+          </svg>
+        </span>
+        <span class="brand-name">NoiseGone</span>
+      </a>
 
       <button class="nav-toggle" aria-expanded="false" aria-controls="nav" aria-label="Открыть меню">
         <span class="nav-burger"></span>
       </button>
-<a class="brand" href="/">
-  <span class="brand-mark" aria-hidden="true">
-    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" role="img" aria-label="NoiseGone logo">
-      <rect width="24" height="24" rx="5" fill="#1b1f2a"/>
-      <path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 1 0-6 0v6a3 3 0 0 0 3 3z" fill="#b38aff"/>
-      <path d="M5 11v1a7 7 0 0 0 14 0v-1h-1v1a6 6 0 0 1-12 0v-1H5zM11 19v2h2v-2h-2z" fill="#b38aff"/>
-    </svg>
-  </span>
-  <span class="brand-name">NoiseGone</span>
-</a>
 
       <nav id="nav" class="site-nav" data-collapsed="true">
         <a href="#features">Возможности</a>
@@ -107,39 +104,39 @@
         <p class="hint">⚠️ На этом этапе это демо-каркас без реальной обработки — функционал появится на следующем блоке.</p>
       </div>
     </section>
-<!-- Upload Section -->
-<section class="section alt" id="upload">
-  <div class="container upload">
-    <h2>Попробуйте прямо сейчас</h2>
+    <!-- Upload Section -->
+    <section class="section alt" id="upload">
+      <div class="container upload">
+        <h2>Попробуйте прямо сейчас</h2>
 
-    <div id="dropZone" class="drop-zone">
-      <p id="dropText">Перетащите аудиофайл сюда или <span class="browse">выберите файл</span></p>
-      <input type="file" id="fileInput" accept="audio/*" hidden>
-    </div>
+        <div id="dropZone" class="drop-zone">
+          <p id="dropText">Перетащите аудиофайл сюда или <span class="browse">выберите файл</span></p>
+          <input type="file" id="fileInput" accept="audio/*" hidden>
+        </div>
 
-    <div id="fileInfo" class="file-info hidden">
-      <p>📂 <span id="fileName"></span></p>
+        <div id="fileInfo" class="file-info hidden">
+          <p>📂 <span id="fileName"></span></p>
 
-      <div class="controls">
-        <label class="select-wrap">
-          <span>Пресет</span>
-          <select id="preset">
-            <option value="voice">Voice Clean (речь)</option>
-            <option value="podcast">Podcast Boost (речь + громкость)</option>
-            <option value="music">Music Light (мягкая чистка)</option>
-          </select>
-        </label>
-        <button id="processBtn" class="btn btn-primary">Обработать</button>
-        <button id="downloadBtn" class="btn hidden">Скачать результат</button>
+          <div class="controls">
+            <label class="select-wrap">
+              <span>Пресет</span>
+              <select id="preset">
+                <option value="voice">Voice Clean (речь)</option>
+                <option value="podcast">Podcast Boost (речь + громкость)</option>
+                <option value="music">Music Light (мягкая чистка)</option>
+              </select>
+            </label>
+            <button id="processBtn" class="btn btn-primary">Обработать</button>
+            <button id="downloadBtn" class="btn hidden">Скачать результат</button>
+          </div>
+
+          <div class="progress-bar">
+            <div class="progress" id="progress"></div>
+          </div>
+          <p id="status" class="status muted"></p>
+        </div>
       </div>
-
-      <div class="progress-bar">
-        <div class="progress" id="progress"></div>
-      </div>
-      <p id="status" class="status muted"></p>
-    </div>
-  </div>
-</section>
+    </section>
 
 
     <!-- Features -->
@@ -201,6 +198,7 @@
     </div>
   </footer>
 
-  <script src="script.js" defer></script>
+  <!-- Я удалил дублирующийся тег <script> отсюда, так как он уже есть в <head> с атрибутом defer.
+       Это позволяет избежать двойной загрузки и выполнения скрипта. -->
 </body>
 </html>
