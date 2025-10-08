@@ -1,6 +1,6 @@
-  /* ============================================================
-   NoiseGone — script.js (локальный UMD FFmpeg, Block 1–3)
-   ============================================================ */
+/* ============================================================
+ * NoiseGone — script.js (локальный UMD FFmpeg, Block 1–3)
+ * ============================================================ */
 
 // защита от повторной инициализации
 if (window.__NG_BOOTED__) {
@@ -58,8 +58,14 @@ if (window.__NG_BOOTED__) {
 
   function handleAudioFile(file){
     if (!file) return;
-    if (!isAudioFile(file)) { alert('Это не аудиофайл. Поддержка: MP3, WAV, M4A, AAC, OGG, OPUS, FLAC и др.'); return; }
-    if (file.size > 25 * 1024 * 1024) { alert('Файл слишком большой. На этапе MVP — до 25 МБ.'); return; }
+    if (!isAudioFile(file)) {
+      alert('Это не аудиофайл. Поддержка: MP3, WAV, M4A, AAC, OGG, OPUS, FLAC и др.');
+      return;
+    }
+    if (file.size > 25 * 1024 * 1024) {
+      alert('Файл слишком большой. На этапе MVP — до 25 МБ.');
+      return;
+    }
     showFileSelected(file);
   }
 
@@ -83,21 +89,26 @@ if (window.__NG_BOOTED__) {
     });
 
     fileInput.addEventListener('change', (e) => {
-      const f = e.target.files?.[0];
+      const target = e.target as HTMLInputElement;
+      const f = target.files?.[0];
       handleAudioFile(f);
     });
   }
 
   /* ---------- ЛОКАЛЬНЫЙ ffmpeg.wasm (UMD) ---------- */
-  // Попробуем оба пути: абсолютный и относительный
-  const FF_BASES = ['/ffmpeg/umd/', './ffmpeg/umd/'];
-  let FF_BASE = FF_BASES[0];
+  // Пробуем несколько путей, чтобы работало и локально, и на хостинге
+  const FF_BASES = [
+    '/ffmpeg/umd/',      // Для хостингов, где /public - это корень сайта
+    './ffmpeg/umd/',     // Относительный путь (надежный)
+    '/public/ffmpeg/umd/' // Для локальных серверов, где корень - это папка проекта
+  ];
+  let FF_BASE = '';
 
   // Получаем глобал, куда UMD экспортирует FFmpeg
   function getFFmpegGlobal() {
     return (typeof FFmpeg !== 'undefined' && FFmpeg)
-        || (typeof window !== 'undefined' && window.FFmpeg)
-        || (typeof self !== 'undefined' && self.FFmpeg)
+        || (typeof window !== 'undefined' && (window as any).FFmpeg)
+        || (typeof self !== 'undefined' && (self as any).FFmpeg)
         || null;
   }
 
@@ -107,68 +118,84 @@ if (window.__NG_BOOTED__) {
   }
 
   // Последовательно пробуем загрузить ffmpeg.min.js из разных базовых путей
-  function tryLoadLocalFFmpeg(bases = FF_BASES, i = 0) {
+  function tryLoadLocalFFmpeg(bases = FF_BASES, i = 0): Promise<string> {
     return new Promise((resolve, reject) => {
-      if (i >= bases.length) return reject(new Error('Не нашли ffmpeg.min.js ни по одному пути'));
+      if (i >= bases.length) {
+        return reject(new Error(`Не нашли ffmpeg.min.js ни по одному пути. Пробовали: ${bases.join(', ')}`));
+      }
       const base = bases[i];
       const s = document.createElement('script');
       s.src = base + 'ffmpeg.min.js';
-      s.async = false;
+      s.async = true; // Используем async для лучшей производительности
       s.onload = () => {
-        // маленькая пауза, чтобы глобал успел объявиться
         setTimeout(() => {
-          if (ffmpegAvailable()) { FF_BASE = base; resolve(base); }
-          else tryLoadLocalFFmpeg(bases, i + 1).then(resolve).catch(reject);
-        }, 0);
+          if (ffmpegAvailable()) {
+            FF_BASE = base;
+            resolve(base);
+          } else {
+            // Если FFmpeg не появился, считаем это ошибкой для этого пути
+            tryLoadLocalFFmpeg(bases, i + 1).then(resolve).catch(reject);
+          }
+        }, 50); // Небольшая задержка, чтобы глобальная переменная успела определиться
       };
-      s.onerror = () => tryLoadLocalFFmpeg(bases, i + 1).then(resolve).catch(reject);
+      s.onerror = () => {
+        console.log(`Путь ${base} не сработал, пробуем следующий...`);
+        tryLoadLocalFFmpeg(bases, i + 1).then(resolve).catch(reject);
+      };
       document.head.appendChild(s);
     });
   }
+
 
   async function loadLocalFFmpeg() {
     if (ffmpegAvailable()) return;
     await tryLoadLocalFFmpeg();
   }
 
-  let createFFmpegFn = null;
-  let fetchFileFn    = null;
-  let ffmpeg = null;
+  let createFFmpegFn: any = null;
+  let fetchFileFn: any    = null;
+  let ffmpeg: any = null;
   let engineReady = false;
   let engineLoading = false;
 
   async function ensureEngine(){
     if (engineReady) return;
-    if (engineLoading) { while (!engineReady) { await new Promise(r => setTimeout(r, 150)); } return; }
+    if (engineLoading) {
+      // Если уже грузится, ждем завершения
+      while (!engineReady) { await new Promise(r => setTimeout(r, 150)); }
+      return;
+    }
     engineLoading = true;
 
-    await loadLocalFFmpeg();
-    if (!ffmpegAvailable()) {
+    try {
+      await loadLocalFFmpeg();
+      if (!ffmpegAvailable()) {
+        throw new Error(`FFmpeg не был загружен. Убедитесь, что папка /ffmpeg находится в правильном месте.`);
+      }
+
+      const g = getFFmpegGlobal();
+      createFFmpegFn = g.createFFmpeg;
+      fetchFileFn    = g.fetchFile;
+
+      if (statusEl) statusEl.textContent = 'Инициализация аудиодвижка… (10–20 сек)';
+      ffmpeg = createFFmpegFn({
+        log: false,
+        corePath: FF_BASE + 'ffmpeg-core.js'
+      });
+
+      ffmpeg.setProgress(({ ratio }: { ratio: number }) => {
+        if (progressEl) progressEl.style.width = Math.min(100, Math.round((ratio || 0) * 100)) + '%';
+      });
+
+      await ffmpeg.load();
+      engineReady = true;
+      if (statusEl) statusEl.textContent = 'Движок готов.';
+    } finally {
       engineLoading = false;
-      throw new Error('FFmpeg не загружен (локальные файлы не найдены). Проверьте ' + FF_BASE);
     }
-
-    const g = getFFmpegGlobal();
-    createFFmpegFn = g.createFFmpeg;
-    fetchFileFn    = g.fetchFile;
-
-    if (statusEl) statusEl.textContent = 'Инициализация аудиодвижка… (10–20 сек)';
-    ffmpeg = createFFmpegFn({
-      log: false,
-      corePath: FF_BASE + 'ffmpeg-core.js'
-    });
-
-    ffmpeg.setProgress(({ ratio }) => {
-      if (progressEl) progressEl.style.width = Math.min(100, Math.round((ratio || 0) * 100)) + '%';
-    });
-
-    await ffmpeg.load();
-    engineReady = true;
-    engineLoading = false;
-    if (statusEl) statusEl.textContent = 'Движок готов.';
   }
 
-  function buildFilter(preset){
+  function buildFilter(preset: string | undefined){
     switch(preset){
       case 'voice':   return 'highpass=f=120,lowpass=f=8000,compand=attacks=0.02:releases=0.3:points=-80/-80|-40/-32|-20/-12|0/-3:soft-knee=6:gain=3';
       case 'podcast': return 'highpass=f=100,lowpass=f=8500,compand=attacks=0.01:releases=0.25:points=-80/-80|-40/-30|-20/-10|0/-2:soft-knee=6:gain=5';
@@ -180,7 +207,7 @@ if (window.__NG_BOOTED__) {
   async function processAudio(){
     if (!currentFile) { alert('Сначала выберите аудиофайл.'); return; }
 
-    if (processBtn) processBtn.disabled = true;
+    if (processBtn) (processBtn as HTMLButtonElement).disabled = true;
     if (downloadBtn) downloadBtn.classList.add('hidden');
     if (statusEl) statusEl.textContent = 'Подготовка…';
     if (progressEl) progressEl.style.width = '0%';
@@ -194,12 +221,13 @@ if (window.__NG_BOOTED__) {
 
       await ffmpeg.FS('writeFile', inName, await fetchFileFn(currentFile));
 
-      const af = buildFilter(presetEl ? presetEl.value : 'voice');
+      const af = buildFilter(presetEl ? (presetEl as HTMLSelectElement).value : 'voice');
 
       if (statusEl) statusEl.textContent = 'Обработка…';
       try{
         await ffmpeg.run('-i', inName, '-af', af, '-ar', '44100', '-ac', '1', outName);
       }catch(e){
+        console.warn('Сложный фильтр не сработал, применяется упрощенный:', e);
         if (statusEl) statusEl.textContent = 'Обработка (упрощённый режим)…';
         await ffmpeg.run('-i', inName, '-af', 'highpass=f=120,lowpass=f=8000,volume=3dB', '-ar', '44100', '-ac', '1', outName);
       }
@@ -209,12 +237,12 @@ if (window.__NG_BOOTED__) {
 
       if (downloadBtn) downloadBtn.classList.remove('hidden');
       if (statusEl) statusEl.textContent = 'Готово ✅';
-    }catch(err){
+    }catch(err: any){
       console.error(err);
       alert(err.message || 'Не удалось обработать аудио.');
       if (statusEl) statusEl.textContent = 'Ошибка обработки.';
     }finally{
-      if (processBtn) processBtn.disabled = false;
+      if (processBtn) (processBtn as HTMLButtonElement).disabled = false;
     }
   }
 
@@ -227,9 +255,10 @@ if (window.__NG_BOOTED__) {
     const a = document.createElement('a');
     a.href = url;
     a.download = 'NoiseGone_' + (currentFile?.name?.replace(/\.[^.]+$/, '') || 'output') + '.wav';
+    document.body.appendChild(a);
     a.click();
+    document.body.removeChild(a);
     URL.revokeObjectURL(url);
   });
-         }
+}
 
-  
