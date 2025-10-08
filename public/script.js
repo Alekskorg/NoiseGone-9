@@ -1,4 +1,4 @@
-/* ============================================================
+  /* ============================================================
    NoiseGone — script.js (локальный UMD FFmpeg, Block 1–3)
    ============================================================ */
 
@@ -89,28 +89,46 @@ if (window.__NG_BOOTED__) {
   }
 
   /* ---------- ЛОКАЛЬНЫЙ ffmpeg.wasm (UMD) ---------- */
-  // Если проект на домене в корне — оставь '/ffmpeg/umd/'.
-  // Если сайт развёрнут из подпапки — поставь './ffmpeg/umd/'.
-  const FF_BASE = '/ffmpeg/umd/';
+  // Попробуем оба пути: абсолютный и относительный
+  const FF_BASES = ['/ffmpeg/umd/', './ffmpeg/umd/'];
+  let FF_BASE = FF_BASES[0];
 
-  function ffmpegAvailable() {
-    return typeof window !== 'undefined'
-      && window.FFmpeg
-      && typeof window.FFmpeg.createFFmpeg === 'function';
+  // Получаем глобал, куда UMD экспортирует FFmpeg
+  function getFFmpegGlobal() {
+    return (typeof FFmpeg !== 'undefined' && FFmpeg)
+        || (typeof window !== 'undefined' && window.FFmpeg)
+        || (typeof self !== 'undefined' && self.FFmpeg)
+        || null;
   }
 
-  function loadLocalFFmpeg() {
-    return new Promise((resolve, reject) => {
-      if (ffmpegAvailable()) return resolve();
+  function ffmpegAvailable() {
+    const g = getFFmpegGlobal();
+    return !!(g && typeof g.createFFmpeg === 'function' && typeof g.fetchFile === 'function');
+  }
 
+  // Последовательно пробуем загрузить ffmpeg.min.js из разных базовых путей
+  function tryLoadLocalFFmpeg(bases = FF_BASES, i = 0) {
+    return new Promise((resolve, reject) => {
+      if (i >= bases.length) return reject(new Error('Не нашли ffmpeg.min.js ни по одному пути'));
+      const base = bases[i];
       const s = document.createElement('script');
-      s.src = FF_BASE + 'ffmpeg.min.js'; // локальный UMD
-      s.crossOrigin = 'anonymous';
+      s.src = base + 'ffmpeg.min.js';
       s.async = false;
-      s.onload = () => resolve();
-      s.onerror = () => reject(new Error('Не удалось загрузить локальный ' + s.src));
+      s.onload = () => {
+        // маленькая пауза, чтобы глобал успел объявиться
+        setTimeout(() => {
+          if (ffmpegAvailable()) { FF_BASE = base; resolve(base); }
+          else tryLoadLocalFFmpeg(bases, i + 1).then(resolve).catch(reject);
+        }, 0);
+      };
+      s.onerror = () => tryLoadLocalFFmpeg(bases, i + 1).then(resolve).catch(reject);
       document.head.appendChild(s);
     });
+  }
+
+  async function loadLocalFFmpeg() {
+    if (ffmpegAvailable()) return;
+    await tryLoadLocalFFmpeg();
   }
 
   let createFFmpegFn = null;
@@ -130,8 +148,9 @@ if (window.__NG_BOOTED__) {
       throw new Error('FFmpeg не загружен (локальные файлы не найдены). Проверьте ' + FF_BASE);
     }
 
-    createFFmpegFn = window.FFmpeg.createFFmpeg;
-    fetchFileFn    = window.FFmpeg.fetchFile;
+    const g = getFFmpegGlobal();
+    createFFmpegFn = g.createFFmpeg;
+    fetchFileFn    = g.fetchFile;
 
     if (statusEl) statusEl.textContent = 'Инициализация аудиодвижка… (10–20 сек)';
     ffmpeg = createFFmpegFn({
@@ -211,4 +230,6 @@ if (window.__NG_BOOTED__) {
     a.click();
     URL.revokeObjectURL(url);
   });
-}
+         }
+
+  
