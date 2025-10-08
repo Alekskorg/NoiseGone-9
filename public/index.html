@@ -28,7 +28,6 @@
   <!-- Favicon -->
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 
-
   <!-- Styles -->
   <link rel="stylesheet" href="styles.css" />
 
@@ -55,11 +54,6 @@
     }
   }
   </script>
-
-  <!-- Основной скрипт приложения. Атрибут defer указывает браузеру загружать скрипт параллельно с HTML,
-       но выполнять его только после полной загрузки и разбора страницы. -->
-  <script src="script.js" defer></script>
-
 </head>
 <body>
   <header class="site-header">
@@ -104,6 +98,7 @@
         <p class="hint">⚠️ На этом этапе это демо-каркас без реальной обработки — функционал появится на следующем блоке.</p>
       </div>
     </section>
+
     <!-- Upload Section -->
     <section class="section alt" id="upload">
       <div class="container upload">
@@ -137,7 +132,6 @@
         </div>
       </div>
     </section>
-
 
     <!-- Features -->
     <section class="section" id="features">
@@ -198,7 +192,11 @@
     </div>
   </footer>
 
-  <!-- Я удалил дублирующийся тег <script> отсюда, так как он уже есть в <head> с атрибутом defer.
-       Это позволяет избежать двойной загрузки и выполнения скрипта. -->
+  <!-- Подключаем ffmpeg перед основным скриптом -->
+  <script src="/ffmpeg/umd/ffmpeg.min.js"></script>
+
+  <!-- Основной JS, выполняется после загрузки страницы -->
+  <script src="/script.js" defer></script>
 </body>
 </html>
+
