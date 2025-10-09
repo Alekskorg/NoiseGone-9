@@ -1,44 +1,16 @@
 {
-  "publicFiles": [
-    "ffmpeg/umd/**"
-  ],
-  "headers": [
-    // Указываем, что все файлы в /ffmpeg/umd/ являются статическими ресурсами
-    {
-      "source": "/ffmpeg/umd/(.*)", 
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "public, max-age=31536000, immutable"
-        }
-      ]
-    },
-    // Явно указываем MIME-тип для JS
-    {
-      "source": "/ffmpeg/umd/(.*)\\.js", 
-      "headers": [
-        {
-          "key": "Content-Type",
-          "value": "application/javascript"
-        }
-      ]
-    },
-    // Явно указываем MIME-тип для WASM
-    {
-      "source": "/ffmpeg/umd/(.*)\\.wasm",
-      "headers": [
-        {
-          "key": "Content-Type",
-          "value": "application/wasm"
-        }
-      ]
-    }
-  ],
-  // Роутинг на index.html ставим последним
   "rewrites": [
     {
       "source": "/(.*)",
       "destination": "/index.html"
     }
+  ],
+  "cleanUrls": true,
+  "publicFiles": [
+    "favicon.svg",
+    "styles.css",
+    "script.js",
+    "privacy.html",
+    "terms.html"
   ]
 }
