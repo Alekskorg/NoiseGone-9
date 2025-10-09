@@ -7,5 +7,10 @@
       "source": "/(.*)",
       "destination": "/index.html"
     }
-  ]
+  ],
+  "staticFiles": {
+    "include": [
+      "public/ffmpeg/umd/**/*"
+    ]
+  }
 }
