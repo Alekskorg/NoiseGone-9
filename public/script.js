@@ -108,7 +108,7 @@ if (window.__NG_BOOTED__) {
     return new Promise((resolve, reject) => {
       if (ffmpegAvailable()) return resolve();
       const s = document.createElement('script');
-      s.src = FF_BASE + 'ffmpeg.min.js';
+      s.src = FF_BASE + 'ffmpeg.lib.js';
       s.onload = () => resolve();
       s.onerror = () => reject(new Error('FFmpeg: не удалось загрузить ' + s.src));
       document.head.appendChild(s);
