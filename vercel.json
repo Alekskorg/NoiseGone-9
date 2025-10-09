@@ -8,9 +8,24 @@
       "destination": "/index.html"
     }
   ],
-  "staticFiles": {
-    "include": [
-      "public/ffmpeg/umd/**/*"
-    ]
-  }
+  "headers": [
+    {
+      "source": "/ffmpeg/umd/(.*)", 
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/javascript"
+        }
+      ]
+    },
+    {
+      "source": "/ffmpeg/umd/ffmpeg-core.wasm",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/wasm"
+        }
+      ]
+    }
+  ]
 }
