@@ -1,6 +1,0 @@
-# NoiseGone basic ignore
-node_modules/
-.vercel/
-*.log
-*.tmp
-.DS_Store
