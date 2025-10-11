@@ -1,10 +1,10 @@
-}/* ============================================================
- * NoiseGone — script.js (Обновлено для работы с CDN)
- * ============================================================ */
+/* ============================================================
+ * NoiseGone — app.js (Новое имя файла для обхода кеша)
+ * ============================================================ */
 
 // защита от повторной инициализации
 if (window.__NG_BOOTED__) {
-  console.warn('NoiseGone: script.js уже инициализирован. Второй запуск пропущен.');
+  console.warn('NoiseGone: app.js уже инициализирован. Второй запуск пропущен.');
 } else {
   window.__NG_BOOTED__ = true;
 
@@ -90,9 +90,7 @@ if (window.__NG_BOOTED__) {
   }
 
   /* ---------- ИНТЕГРАЦИЯ FFmpeg (Используется глобальный объект FFmpeg, загруженный через CDN) ---------- */
-  
-  // const FF_BASE = '/ffmpeg/umd/'; // <--- УДАЛЕНО
-
+  
   function ffmpegGlobal() {
     if (typeof FFmpeg !== 'undefined') return FFmpeg;
     if (typeof window !== 'undefined' && window.FFmpeg) return window.FFmpeg;
@@ -103,12 +101,6 @@ if (window.__NG_BOOTED__) {
     const g = ffmpegGlobal();
     return !!(g && typeof g.createFFmpeg === 'function' && typeof g.fetchFile === 'function');
   }
-
-  // function loadLocalFFmpeg() { /* <--- ВСЯ ФУНКЦИЯ loadLocalFFmpeg УДАЛЕНА */
-  //   return new Promise((resolve, reject) => {
-  //     /* ... */
-  //   });
-  // }
 
   let createFFmpegFn = null;
   let fetchFileFn    = null;
@@ -122,8 +114,7 @@ if (window.__NG_BOOTED__) {
     engineLoading = true;
 
     try {
-      // await loadLocalFFmpeg(); <--- УДАЛЕНО, так как скрипт уже загружен через <script> тег
-      
+      // Локальная загрузка удалена, библиотека FFmpeg должна быть доступна через CDN:
       if (!ffmpegAvailable()) throw new Error('FFmpeg не загружен. Проверьте, что CDN-скрипт подключен в index.html.');
 
       const g = ffmpegGlobal();
@@ -131,11 +122,11 @@ if (window.__NG_BOOTED__) {
       fetchFileFn    = g.fetchFile;
 
       if (statusEl) statusEl.textContent = 'Инициализация аудиодвижка… (10–20 сек)';
-      
-      // <--- КЛЮЧЕВОЕ ИЗМЕНЕНИЕ: corePath теперь указывает на CDN
+      
+      // !!! ИСПРАВЛЕНО: corePath теперь указывает на CDN v0.12.2, соответствующую библиотеке
       ffmpeg = createFFmpegFn({
         log: false,
-        corePath: 'https://unpkg.com/@ffmpeg/core@0.11.6/dist/ffmpeg-core.js' 
+        corePath: 'https://unpkg.com/@ffmpeg/core@0.12.2/dist/ffmpeg-core.js'  
       });
 
       ffmpeg.setProgress(({ ratio }) => {
@@ -146,14 +137,13 @@ if (window.__NG_BOOTED__) {
       engineReady = true;
       if (statusEl) statusEl.textContent = 'Движок готов.';
     } catch (error) {
-        console.error("Ошибка при инициализации FFmpeg:", error);
-        throw new Error('Ошибка инициализации FFmpeg. Возможно, проблема с CDN или подключением ядра.');
-    } finally {
+        console.error("Ошибка при инициализации FFmpeg:", error);
+        // Старая ошибка про /ffmpeg/umd/ удалена
+        throw new Error('Ошибка инициализации FFmpeg. Возможно, проблема с CDN или подключением ядра.');
+    } finally {
       engineLoading = false;
     }
   }
-// ... (остальной код функции buildFilter и processAudio остается без изменений)
-// ...
 
   function buildFilter(preset){
     switch(preset){
@@ -219,4 +209,4 @@ if (window.__NG_BOOTED__) {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
   });
-
+}
